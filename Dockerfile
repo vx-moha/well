@@ -3,7 +3,7 @@ FROM --platform=linux/amd64 ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install core system tools, Python 3.11, OpenSSH, and Supervisord
-RUN apt update -y && apt install -y software-properties-common wget curl gnupg2 && \
+RUN apt update -y && apt install -y software-properties-common wget curl gnupg2 lsb-release && \
     add-apt-repository ppa:deadsnakes/ppa -y && \
     apt update -y && apt install -y \
     openssh-server \
@@ -20,10 +20,11 @@ RUN apt update -y && apt install -y software-properties-common wget curl gnupg2 
     supervisor \
     && rm -rf /var/lib/apt/lists/*
 
-# Add official OpenResty repository keys and install Node.js + OpenResty safely
-RUN wget -qO - https://openresty.org/pubkey/gpg | apt-key add - && \
-    add-apt-repository -y "deb http://openresty.org/bin/ubuntu $(lsb_release -sc) main" && \
-    curl -sL https://deb.nodesource.com/setup_20.x | bash - && \
+# Fix: Securely download OpenResty keyring file without apt-key and set up repositories
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://openresty.org/pubkey/gpg | gpg --dearmor -o /etc/apt/keyrings/openresty.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/openresty.gpg] http://openresty.org/bin/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/openresty.list && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt update -y && apt install -y sqlite3 nodejs openresty && \
     rm -rf /var/lib/apt/lists/*
 
